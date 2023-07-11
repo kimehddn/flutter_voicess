@@ -13,22 +13,21 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: MainPage(),
+      home: Test4Page(),
     );
   }
 }
 
-class MainPage extends StatefulWidget {
+class Test4Page extends StatefulWidget {
   @override
-  _MainPageState createState() => _MainPageState();
+  _Test4PageState createState() => _Test4PageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class _Test4PageState extends State<Test4Page> {
   var _filePath;
   bool _isLoading = false;
   String _phoneNumber = '';
   String serverResponse = '';
-  String serverpPrcent = '';
 
   Future<String> useRootBundle() async {
     return await rootBundle.loadString('assets/text/my_text.txt');
@@ -36,10 +35,6 @@ class _MainPageState extends State<MainPage> {
 
   Future<void> _openFilePicker() async {
     try {
-      setState(() {
-        _isLoading = true;
-      });
-
       FilePickerResult? result = await FilePicker.platform.pickFiles();
 
       if (result != null) {
@@ -52,10 +47,6 @@ class _MainPageState extends State<MainPage> {
       print("지원되지 않는 작업입니다: $e");
     } catch (ex) {
       print(ex);
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
@@ -96,44 +87,50 @@ class _MainPageState extends State<MainPage> {
 
       setState(() {
         _isLoading = true;
-        serverResponse = '';
       });
 
       try {
-        var request = http.MultipartRequest('POST', Uri.parse(url));
-        request.fields['phoneNumber'] = _phoneNumber;
-        request.files.add(
-          await http.MultipartFile.fromPath('file', _filePath),
-        );
+        while (_isLoading) {
+          var request = http.MultipartRequest('POST', Uri.parse(url));
+          request.fields['phoneNumber'] = _phoneNumber;
+          request.files.add(
+            await http.MultipartFile.fromPath('file', _filePath),
+          );
 
-        var response = await request.send();
+          var response = await request.send();
 
-        if (response.statusCode == 200) {
-          setState(() {
-            serverResponse = '파일 전송 성공';
-          });
+          if (response.statusCode == 200) {
+            setState(() {
+              serverResponse = '파일 전송 성공';
+            });
+          } else {
+            setState(() {
+              serverResponse = '파일 전송 실패';
+            });
+          }
 
+          // 서버 응답 문자열 가져오기
           var responseString = await response.stream.bytesToString();
 
+          // 서버 응답 확인
           if (responseString == '1') {
+            // "위험" 화면으로 전환
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => WarningScreen(() async => responseString)),
             );
+            break; // 반복문 종료
           } else if (responseString == '0') {
+            // "안전" 화면으로 전환
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => SafetyScreen(() => Future.value(responseString))),
             );
+            break; // 반복문 종료
           }
-        } else {
-          setState(() {
-            serverResponse = '파일 전송 실패';
-          });
         }
       } catch (e) {
         print(e);
-      } finally {
         setState(() {
           _isLoading = false;
         });
@@ -175,18 +172,11 @@ class _MainPageState extends State<MainPage> {
             FutureBuilder(
               future: useRootBundle(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  if (snapshot.hasData) {
-                    return Text(
-                      '버전: ${snapshot.data}',
-                      style: TextStyle(fontSize: 20),
-                    );
-                  } else {
-                    return Text(
-                      '버전을 불러올 수 없습니다.',
-                      style: TextStyle(fontSize: 20),
-                    );
-                  }
+                if (snapshot.hasData) {
+                  return Text(
+                    '버전: ${snapshot.data}',
+                    style: TextStyle(fontSize: 20),
+                  );
                 } else {
                   return CircularProgressIndicator();
                 }

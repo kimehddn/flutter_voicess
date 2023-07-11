@@ -87,7 +87,7 @@ class LoginPage extends StatelessWidget {
       );
 
       if (response.statusCode == 200) {
-        Navigator.pushReplacementNamed(context, '/test4');
+        Navigator.pushReplacementNamed(context, '/Main', arguments: id);
       } else {
         showDialog(
           context: context,
@@ -125,6 +125,7 @@ class LoginPage extends StatelessWidget {
     }
   }
 }
+
 class SignupPage extends StatelessWidget {
   TextEditingController _idController = TextEditingController();
   TextEditingController _nameController = TextEditingController();
@@ -254,5 +255,34 @@ class SignupPage extends StatelessWidget {
         ),
       );
     }
+  }
+}
+
+class MainPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final String id = ModalRoute.of(context)!.settings.arguments as String;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Main Page'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '로그인 성공!',
+              style: TextStyle(fontSize: 24),
+            ),
+            SizedBox(height: 16),
+            Text(
+              '로그인한 ID: $id',
+              style: TextStyle(fontSize: 18),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

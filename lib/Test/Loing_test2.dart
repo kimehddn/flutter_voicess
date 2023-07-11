@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'Main.dart';
+import 'test4.dart';
 
 void main() {
   runApp(MyApp());
@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/signup': (context) => SignupPage(),
         '/login': (context) => LoginPage(),
-        '/Main': (context) => MainPage(),
+        '/test4': (context) => Test4Page(),
       },
     );
   }
@@ -67,6 +67,17 @@ class LoginPage extends StatelessWidget {
               child: Text('회원가입'),
             ),
             SizedBox(height: 8.0),
+            Expanded(
+              child: Center(
+                child: Text(
+                  '제발 되라',
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -125,6 +136,7 @@ class LoginPage extends StatelessWidget {
     }
   }
 }
+
 class SignupPage extends StatelessWidget {
   TextEditingController _idController = TextEditingController();
   TextEditingController _nameController = TextEditingController();

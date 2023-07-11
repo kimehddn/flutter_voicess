@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
@@ -12,12 +14,16 @@ class MyApp extends StatefulWidget {
   _MyAppState createState() => _MyAppState();
 }
 
-enum ServerResponse { TRUE, FALSE, NONE }
-
 class _MyAppState extends State<MyApp> {
-  var _filePath;
+  File? _file;
   bool _isLoading = false;
-  ServerResponse _serverResponse = ServerResponse.NONE;
+  late Dio _dio;
+
+  @override
+  void initState() {
+    super.initState();
+    _dio = Dio();
+  }
 
   Future<String> useRootBundle() async {
     return await rootBundle.loadString('assets/text/my_text.txt');
@@ -30,8 +36,7 @@ class _MyAppState extends State<MyApp> {
       if (result != null) {
         PlatformFile file = result.files.first;
         setState(() {
-          _filePath = file.path!;
-          _serverResponse = ServerResponse.NONE;
+          _file = File(file.path!);
         });
       }
     } on PlatformException catch (e) {
@@ -42,9 +47,9 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _uploadFile() async {
-    if (_filePath != null) {
+    if (_file != null && _file!.existsSync()) {
       String url = 'http://182.229.34.184:9966/api/client/file_byte';
-      String fileName = _filePath.split('/').last;
+      String fileName = _file!.path.split('/').last;
 
       setState(() {
         _isLoading = true;
@@ -52,30 +57,32 @@ class _MyAppState extends State<MyApp> {
 
       try {
         FormData formData = FormData.fromMap({
-          'file': await MultipartFile.fromFile(_filePath, filename: fileName),
+          'file': await MultipartFile.fromFile(_file!.path, filename: fileName),
         });
 
         // 파일 전송 시작
-        Response response = await Dio().post(url, data: formData);
+        Response response = await _dio.post(url, data: formData);
 
         // 파일 전송이 완료된 후 처리
+        setState(() {
+          _isLoading = false;
+          _file = null; // 파일 초기화
+        });
+
+        // 서버 응답 처리
         if (response.statusCode == 200) {
-          setState(() {
-            _isLoading = false;
-            _serverResponse = ServerResponse.TRUE;
-            _filePath = null;
-          });
+          // 서버 응답이 성공인 경우
+          print('서버 응답 성공');
+          // TODO: 서버 응답에 대한 추가 처리 수행
         } else {
-          setState(() {
-            _isLoading = false;
-            _serverResponse = ServerResponse.FALSE;
-          });
+          // 서버 응답이 실패인 경우
+          print('서버 응답 실패');
+          // TODO: 실패 처리에 대한 로직 구현
         }
       } catch (e) {
         print(e);
         setState(() {
           _isLoading = false;
-          _serverResponse = ServerResponse.FALSE;
         });
       }
     }
@@ -129,14 +136,10 @@ class _MyAppState extends State<MyApp> {
                   _uploadFile();
                 },
               ),
-              if (_filePath != null)
-                Text('첨부한 파일 경로: $_filePath')
+              if (_file != null)
+                Text('첨부한 파일 경로: ${_file!.path}')
               else
                 Container(),
-              if (_serverResponse == ServerResponse.TRUE)
-                Text('서버에서 받은 값이 참입니다.', style: TextStyle(color: Colors.green)),
-              if (_serverResponse == ServerResponse.FALSE)
-                Text('서버에서 받은 값이 거짓입니다.', style: TextStyle(color: Colors.red)),
             ],
           ),
         ),

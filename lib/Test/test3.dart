@@ -13,22 +13,21 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: MainPage(),
+      home: Test3Page(),
     );
   }
 }
 
-class MainPage extends StatefulWidget {
+class Test3Page extends StatefulWidget {
   @override
-  _MainPageState createState() => _MainPageState();
+  _Test3PageState createState() => _Test3PageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class _Test3PageState extends State<Test3Page> {
   var _filePath;
   bool _isLoading = false;
   String _phoneNumber = '';
   String serverResponse = '';
-  String serverpPrcent = '';
 
   Future<String> useRootBundle() async {
     return await rootBundle.loadString('assets/text/my_text.txt');
@@ -36,10 +35,6 @@ class _MainPageState extends State<MainPage> {
 
   Future<void> _openFilePicker() async {
     try {
-      setState(() {
-        _isLoading = true;
-      });
-
       FilePickerResult? result = await FilePicker.platform.pickFiles();
 
       if (result != null) {
@@ -52,10 +47,6 @@ class _MainPageState extends State<MainPage> {
       print("지원되지 않는 작업입니다: $e");
     } catch (ex) {
       print(ex);
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
@@ -91,49 +82,55 @@ class _MainPageState extends State<MainPage> {
 
   Future<void> _uploadFile() async {
     if (_filePath != null && _phoneNumber.isNotEmpty) {
-      String url = 'http://182.229.34.184:5502/api/VoiClaReq';
+      String url = 'http://182.229.34.184:9989/api/client/file';
       String fileName = _filePath.split('/').last;
 
       setState(() {
         _isLoading = true;
-        serverResponse = '';
       });
 
       try {
-        var request = http.MultipartRequest('POST', Uri.parse(url));
-        request.fields['phoneNumber'] = _phoneNumber;
-        request.files.add(
-          await http.MultipartFile.fromPath('file', _filePath),
-        );
+        while (_isLoading) {
+          var request = http.MultipartRequest('POST', Uri.parse(url));
+          request.fields['phoneNumber'] = _phoneNumber;
+          request.files.add(
+            await http.MultipartFile.fromPath('file', _filePath),
+          );
 
-        var response = await request.send();
+          var response = await request.send();
 
-        if (response.statusCode == 200) {
-          setState(() {
-            serverResponse = '파일 전송 성공';
-          });
+          if (response.statusCode == 200) {
+            setState(() {
+              serverResponse = '파일 전송 성공';
+            });
+          } else {
+            setState(() {
+              serverResponse = '파일 전송 실패';
+            });
+          }
 
+          // 서버 응답 문자열 가져오기
           var responseString = await response.stream.bytesToString();
 
+          // 서버 응답 확인
           if (responseString == '1') {
+            // "위험" 화면으로 전환
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => WarningScreen(() async => responseString)),
             );
+            break; // 반복문 종료
           } else if (responseString == '0') {
+            // "안전" 화면으로 전환
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => SafetyScreen(() => Future.value(responseString))),
             );
+            break; // 반복문 종료
           }
-        } else {
-          setState(() {
-            serverResponse = '파일 전송 실패';
-          });
         }
       } catch (e) {
         print(e);
-      } finally {
         setState(() {
           _isLoading = false;
         });
@@ -156,82 +153,44 @@ class _MainPageState extends State<MainPage> {
             RichText(
               text: TextSpan(
                 text: '제로',
-                style: TextStyle(fontSize: 60, color: Colors.black),
+                style: TextStyle(fontSize: 30, color: Colors.black),
                 children: [
                   TextSpan(
                     text: '베이스',
-                    style: TextStyle(fontSize: 40, color: Colors.red),
+                    style: TextStyle(fontSize: 20, color: Colors.red),
                   ),
                 ],
               ),
             ),
-            SizedBox(height: 40),
-            Image.asset(
-              'images/icon/check.png',
-              width: 200,
-              height: 200,
-            ),
-            SizedBox(height: 40),
+            Image.asset('images/icon/check.png'),
             FutureBuilder(
               future: useRootBundle(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  if (snapshot.hasData) {
-                    return Text(
-                      '버전: ${snapshot.data}',
-                      style: TextStyle(fontSize: 20),
-                    );
-                  } else {
-                    return Text(
-                      '버전을 불러올 수 없습니다.',
-                      style: TextStyle(fontSize: 20),
-                    );
-                  }
+                if (snapshot.hasData) {
+                  return Text('버전: ${snapshot.data}');
                 } else {
                   return CircularProgressIndicator();
                 }
               },
             ),
-            SizedBox(height: 20),
             ElevatedButton(
-              child: Text(
-                '전화번호 입력',
-                style: TextStyle(fontSize: 20),
-              ),
+              child: Text('전화번호 입력'),
               onPressed: _showPhoneNumberInput,
             ),
-            SizedBox(height: 20),
             ElevatedButton(
-              child: Text(
-                '파일 첨부',
-                style: TextStyle(fontSize: 20),
-              ),
+              child: Text('파일 첨부'),
               onPressed: _openFilePicker,
             ),
-            SizedBox(height: 20),
             ElevatedButton(
-              child: Text(
-                '파일 전송',
-                style: TextStyle(fontSize: 20),
-              ),
+              child: Text('파일 전송'),
               onPressed: _uploadFile,
             ),
-            SizedBox(height: 20),
             if (_filePath != null)
-              Text(
-                '첨부한 파일 경로: $_filePath',
-                style: TextStyle(fontSize: 16),
-              ),
+              Text('첨부한 파일 경로: $_filePath'),
             if (_phoneNumber.isNotEmpty)
-              Text(
-                '입력한 전화번호: $_phoneNumber',
-                style: TextStyle(fontSize: 16),
-              ),
+              Text('입력한 전화번호: $_phoneNumber'),
             SizedBox(height: 20),
-            Text(
-              '서버 응답: $serverResponse',
-              style: TextStyle(fontSize: 20),
-            ),
+            Text('서버 응답: $serverResponse'),
           ],
         ),
       ),

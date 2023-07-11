@@ -73,7 +73,7 @@ class _MyAppState extends State<MyApp> {
                           text: '베이스',
                           style: TextStyle(fontSize: 20, color: Colors.red)),
                     ])),
-            Image.asset('images/icon/chek.png'),
+            Image.asset('images/icon/chcek.png'),
             FutureBuilder(
               future: useRootBundle(),
               builder: (context, snapshot) {
